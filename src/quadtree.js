@@ -132,15 +132,16 @@ const vector2d = class Vector2D {
 }
 
 const quadtree = class Quadtree {
-    constructor(boundary, capacity) {
-        this.boundary = boundary;
+    constructor(x, y, width, height, capacity) {
+        this.boundary = new C3.Rect(x, y, x + width, y + height);
         this.capacity = capacity;
-        this.points = [];
+        this.instances = [];
         this.divided = false;
     }
 
-    insert(point) {
-        if (!this.boundary.contains(point)) {
+    insert(instance) {
+        debugger;
+        if (!this.boundary.contains(instance)) {
             return false;
         }
 
@@ -209,7 +210,8 @@ const quadtree = class Quadtree {
 if (!globalThis._P305){
     globalThis._P305 = {};
 } 
-globalThis._P305.rect = rect;
-globalThis._P305.circle = circle;
-globalThis._P305.vector2d = vector2d;
-globalThis._P305.quadtree = quadtree;
+
+globalThis._P305.Rect = rect;
+globalThis._P305.Circle = circle;
+globalThis._P305.Vector2d = vector2d;
+globalThis._P305.QuadTree = quadtree;

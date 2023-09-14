@@ -69,10 +69,19 @@ module.exports = {
     },
     {
       type: "float",
+      id: "acceleration",
+      name: "Acceleration",
+      options: {
+        initialValue: 500
+      },
+      desc: "Acceleration of each boid unit, per second.",
+    },
+    {
+      type: "float",
       id: "maxForce",
       name: "Max Force",
       options: {
-        initialValue: 500
+        initialValue: 0.1
       },
       desc: "Maximum steering force of each boid unit.",
     },
@@ -87,39 +96,57 @@ module.exports = {
     },
     {
       type: "float",
-      id: "viewRadius",
-      name: "View Radius",
+      id: "separationDistance",
+      name: "Separation Distance",
       options: {
-        initialValue: 100
+        initialValue: 30
       },
-      desc: "Radius of the view range of each boid unit.",
+      desc: "Distance to keep away from other boids.",
     },
     {
       type: "float",
-      id: "separation Weight",
-      name: "Separation Weight",
+      id: "separationForce",
+      name: "Separation Force",
       options: {
-        initialValue: 0.2
+        initialValue: 1
       },
-      desc: "Weight of the separation behavior.",
+      desc: "Force of the separation behavior.",
     },
     {
       type: "float",
-      id: "alignmentWeight",
-      name: "Alignment Weight",
+      id: "alignmentDistance",
+      name: "Alignment Distance",
       options: {
-        initialValue: 0.2
+        initialValue: 10
       },
-      desc: "Weight of the alignment behavior.",
+      desc: "Distance of the alignment behavior.",
     },
     {
       type: "float",
-      id: "cohesionWeight",
-      name: "Cohesion Weight",
+      id: "alignmentForce",
+      name: "Alignment Force",
       options: {
-        initialValue: 0.2
+        initialValue: 1
       },
-      desc: "Weight of the cohesion behavior.",
+      desc: "Force of the alignment behavior.",
+    },
+    {
+      type: "float",
+      id: "cohesionDistance",
+      name: "Cohesion Distance",
+      options: {
+        initialValue: 10
+      },
+      desc: "Distance of the cohesion behavior.",
+    },
+    {
+      type: "float",
+      id: "cohesionForce",
+      name: "Cohesion Force",
+      options: {
+        initialValue: 1
+      },
+      desc: "Force of the cohesion behavior.",
     }
     /*
     {
@@ -173,6 +200,60 @@ module.exports = {
     general: "General",
   },
   Acts: {
+    SetEnabled: {
+      category: "general",
+      forward: "SetEnabled",
+      autoScriptInterface: true,
+      highlight: false,
+      deprecated: false,
+      isAsync: false,
+      params: [
+        {
+          id: "enabled",
+          name: "Enabled",
+          desc: "Enabled",
+          type: "boolean",
+          value: true,
+        },
+      ],
+      listName: "Set {my} enabled to {0}",
+      displayText: "{my}: Set enabled to {0}",
+      description: "Set enabled",
+    },
+    Flock: {
+      category: "general",
+      forward: "Flock",
+      autoScriptInterface: true,
+      highlight: false,
+      deprecated: false,
+      isAsync: false,
+      params: [
+        {
+          id: "targetX",
+          name: "Target X",
+          desc: "Target X",
+          type: "number",
+          value: 0,
+        },
+        {
+          id: "targetY",
+          name: "Target Y",
+          desc: "Target Y",
+          type: "number",
+          value: 0,
+        },
+        {
+          id: "flockTargetType",
+          name: "Float Target Type",
+          desc: "Float Target Type",
+          type: "object",
+          allowedPluginIds: ["Sprite"],
+        },
+      ],
+      listName: "Flock",
+      displayText: "{my}: Flock to [i]{0}[/i], [i]{1}[/i] (target type: {2})",
+      description: "Flock",
+    }
     /*
     SampleAction: {
       // The category of the action as it appears in the add action dialog
