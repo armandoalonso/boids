@@ -22,6 +22,10 @@ module.exports = {
   // addonUrl: "https://www.construct.net/en/make-games/addons/####/XXXX", // displayed in auto-generated docs
   // githubUrl: "https://github.com/skymen/XXXX", // displays latest release version in auto-generated docs
   fileDependencies: [
+    {
+      filename: "quadtree.js",
+      type: "inline-script",
+    }
     /*
     {
       filename: "filename.js", // no need to include "c3runtime/" prefix
@@ -80,6 +84,42 @@ module.exports = {
         initialValue: false
       },
       desc: "Set angle of each boid unit to match its movement direction.",
+    },
+    {
+      type: "float",
+      id: "viewRadius",
+      name: "View Radius",
+      options: {
+        initialValue: 100
+      },
+      desc: "Radius of the view range of each boid unit.",
+    },
+    {
+      type: "float",
+      id: "separation Weight",
+      name: "Separation Weight",
+      options: {
+        initialValue: 0.2
+      },
+      desc: "Weight of the separation behavior.",
+    },
+    {
+      type: "float",
+      id: "alignmentWeight",
+      name: "Alignment Weight",
+      options: {
+        initialValue: 0.2
+      },
+      desc: "Weight of the alignment behavior.",
+    },
+    {
+      type: "float",
+      id: "cohesionWeight",
+      name: "Cohesion Weight",
+      options: {
+        initialValue: 0.2
+      },
+      desc: "Weight of the cohesion behavior.",
     }
     /*
     {
