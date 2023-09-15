@@ -46,6 +46,7 @@ const B_C = C3.Behaviors[BEHAVIOR_INFO.id];
 B_C.Type = class extends C3.SDKBehaviorTypeBase {
   constructor(objectClass) {
     super(objectClass);
+    this.quadtree = null;
   }
 
   Release() {
@@ -53,6 +54,15 @@ B_C.Type = class extends C3.SDKBehaviorTypeBase {
   }
 
   OnCreate() {}
+
+  CreateQuadtree(width, height, capacity, instances) {
+    this.quadtree = new globalThis._P305.QuadTree(0, 0, width, height, capacity);
+  }
+
+  ClearQuadtree() {
+    //this.quadtree = null;
+  }
+
 };
 
 //====== SCRIPT INTERFACE ======

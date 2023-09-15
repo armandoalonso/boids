@@ -69,19 +69,10 @@ module.exports = {
     },
     {
       type: "float",
-      id: "acceleration",
-      name: "Acceleration",
-      options: {
-        initialValue: 500
-      },
-      desc: "Acceleration of each boid unit, per second.",
-    },
-    {
-      type: "float",
       id: "maxForce",
-      name: "Max Force",
+      name: "MaxForce",
       options: {
-        initialValue: 0.1
+        initialValue: 1
       },
       desc: "Maximum steering force of each boid unit.",
     },
@@ -105,48 +96,53 @@ module.exports = {
     },
     {
       type: "float",
-      id: "separationForce",
-      name: "Separation Force",
+      id: "separationPriority",
+      name: "Separation Priority",
       options: {
         initialValue: 1
       },
-      desc: "Force of the separation behavior.",
+      desc: "Priority of the separation behavior.",
     },
     {
       type: "float",
-      id: "alignmentDistance",
-      name: "Alignment Distance",
+      id: "alignmentPriority",
+      name: "Alignment Priority",
       options: {
         initialValue: 10
       },
-      desc: "Distance of the alignment behavior.",
+      desc: "Priority of the alignment behavior.",
     },
     {
       type: "float",
-      id: "alignmentForce",
-      name: "Alignment Force",
-      options: {
-        initialValue: 1
-      },
-      desc: "Force of the alignment behavior.",
-    },
-    {
-      type: "float",
-      id: "cohesionDistance",
-      name: "Cohesion Distance",
+      id: "cohesionPriority",
+      name: "Cohesion Priority",
       options: {
         initialValue: 10
       },
-      desc: "Distance of the cohesion behavior.",
+      desc: "Priority of the cohesion behavior.",
+    },
+    {
+      type: "combo",
+      id: "flockNeighborsStrategy",
+      name: "Flocking Neighbors Strategy",
+      options: {
+        initialValue: "all",
+        items: [
+          { all: "All" },
+          { distance: "Distance" },
+          { los: "Line of Sight" },
+          { quadtree: "Quadtree" },
+        ],
+      },
     },
     {
       type: "float",
-      id: "cohesionForce",
-      name: "Cohesion Force",
+      id: "flockNeighborDistance",
+      name: "Flocking Neighbor Distance",
       options: {
-        initialValue: 1
+        initialValue: 100
       },
-      desc: "Force of the cohesion behavior.",
+      desc: "Distance used by the distance - neighbors strategy.",
     }
     /*
     {
@@ -220,9 +216,69 @@ module.exports = {
       displayText: "{my}: Set enabled to {0}",
       description: "Set enabled",
     },
-    Flock: {
+    SetSeperationPriority: {
       category: "general",
-      forward: "Flock",
+      forward: "SetSeperationPriority",
+      autoScriptInterface: true,
+      highlight: false,
+      deprecated: false,
+      isAsync: false,
+      params: [
+        {
+          id: "priority",
+          name: "Priority",
+          desc: "Priority",
+          type: "number",
+          value: 1,
+        },
+      ],
+      listName: "Set {my} seperation priority to {0}",
+      displayText: "{my}: Set seperation priority to {0}",
+      description: "Set seperation priority",
+    },
+    SetAlignmentPriority: {
+      category: "general",
+      forward: "SetAlignmentPriority",
+      autoScriptInterface: true,
+      highlight: false,
+      deprecated: false,
+      isAsync: false,
+      params: [
+        {
+          id: "priority",
+          name: "Priority",
+          desc: "Priority",
+          type: "number",
+          value: 1,
+        },
+      ],
+      listName: "Set {my} alignment priority to {0}",
+      displayText: "{my}: Set alignment priority to {0}",
+      description: "Set alignment priority",
+    },
+    SetCohesionPriority: {
+      category: "general",
+      forward: "SetCohesionPriority",
+      autoScriptInterface: true,
+      highlight: false,
+      deprecated: false,
+      isAsync: false,
+      params: [
+        {
+          id: "priority",
+          name: "Priority",
+          desc: "Priority",
+          type: "number",
+          value: 1,
+        },
+      ],
+      listName: "Set {my} cohesion priority to {0}",
+      displayText: "{my}: Set cohesion priority to {0}",
+      description: "Set cohesion priority",
+    },
+    FlockToTarget: {
+      category: "general",
+      forward: "FlockToTarget",
       autoScriptInterface: true,
       highlight: false,
       deprecated: false,
@@ -241,18 +297,23 @@ module.exports = {
           desc: "Target Y",
           type: "number",
           value: 0,
-        },
-        {
-          id: "flockTargetType",
-          name: "Float Target Type",
-          desc: "Float Target Type",
-          type: "object",
-          allowedPluginIds: ["Sprite"],
-        },
+        }
       ],
       listName: "Flock",
-      displayText: "{my}: Flock to [i]{0}[/i], [i]{1}[/i] (target type: {2})",
+      displayText: "{my}: Flock to [i]{0}[/i], [i]{1}[/i]",
       description: "Flock",
+    },
+    FlockRandom: {
+      category: "general",
+      forward: "FlockRandom",
+      autoScriptInterface: true,
+      highlight: false,
+      deprecated: false,
+      isAsync: false,
+      params: [],
+      listName: "Flock Random",
+      displayText: "{my}: Flock random",
+      description: "Flock in random directions",
     }
     /*
     SampleAction: {

@@ -6,44 +6,43 @@ function getInstanceJs(parentClass, scriptInterface, addonTriggers, C3) {
       this.enabled = true;
       this.velocityX = 0;
       this.velocityY = 0;
-      this.acceleration = 0;
+
+      this.deseriedVelocityX;
+      this.deseriedVelocityY;
 
       this.maxForce  = 0.1
       this.maxSpeed = 3;
       this.setMoveAngle = false;
-      this.sightRadius = 50;
 
+      this.neighborStrategy = 0;
+      this.flockNeighborDistance = 0;
+      this.sightRadius = 50;
       this.nearbyBoids = [];
       this.nearbyObstacles = [];
 
+      this.targetX = 0;
+      this.targetY = 0;
       this.targetPriority = 0.2;
+
       this.seperationDistance = 0;
-      this.seperationForce = 0;
-      this.alignmentDistance = 0;
-      this.alignmentForce = 0;
-      this.cohesionDistance = 0;
-      this.cohesionForce = 0;
+      this.seperationPriority = 0;
+      this.alignmentPriority = 0;
+      this.cohesionPriority = 0;
 
-      this.steering = {};
-      this.range = null;
-      this.capacity = 10;
-
-      //create global quadtree data structure
-      if (globalThis.QuadTree == null) {
-        globalThis.QuadTree = {}
-      }
+      this.steeringForceX = 0;
+      this.steeringForceY = 0;
 
       if (properties) {
-        // this.enabled = properties[0];
-        // this.maxSpeed = properties[1];
-        // this.maxAcceleration = properties[2];
-        // this.setMoveAngle = properties[3];
-        // this.seperationDistance = properties[4];
-        // this.seperationForce = properties[5];
-        // this.alignmentDistance = properties[6];
-        // this.alignmentForce = properties[7];
-        // this.cohesionDistance = properties[8];
-        // this.cohesionForce = properties[9];
+        this.enabled = properties[0];
+        this.maxSpeed = properties[1];
+        this.maxForce = properties[2];
+        this.setMoveAngle = properties[3];
+        this.seperationDistance = properties[4];
+        this.seperationPriority = properties[5];
+        this.alignmentPriority = properties[6];
+        this.cohesionPriority = properties[7];
+        this.neighborStrategy = properties[8];
+        this.flockNeighborDistance = properties[9];
       }
 
       if (this.enabled) {
@@ -54,112 +53,220 @@ function getInstanceJs(parentClass, scriptInterface, addonTriggers, C3) {
 
     Tick() {
       if (this.enabled) {
-
         //this.ConstructBoidQuadTree();
-
-        //edges
-        //flock
-        //update
-        //prune
+        this.ApplySteeringForce();
       }
     }
 
     Tick2() {
-      //this.DestroyBoidQuadTree();
+      this.DestroyBoidQuadTree();
     }
 
-    Flock(targetX, targetY, targetType)
-    {
-      const wi = this._inst.GetWorldInfo();
-      const deltaX = targetX - wi.GetX();
-      const deltaY = targetY - wi.GetY();
+    FlockRandom() {
+      const randomX = Math.random() * this.GetRuntime().GetMainRunningLayout().GetWidth();
+      const randomY = Math.random() * this.GetRuntime().GetMainRunningLayout().GetHeight();
+      this.FlockToTarget(randomX, randomY);
+    }
 
-      // nomalize
-      let normalX = 0;
-      let normalY = 0;
-      const length = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-      if (length > 0) {
-        normalX = deltaX / length;
-        normalY = deltaY / length;
-      }
+    FlockToTarget(targetX, targetY)
+    {
+      this.targetX = targetX;
+      this.targetY = targetY;
+
+      const {distance, deltaX, deltaY} = this.GetDistanceToTarget(this._inst, targetX, targetY);
+      const {normalX, normalY} = this.GetNormal(deltaX, deltaY, distance);
 
       // accelerate towards the target x,y at maximum allowed speed, adjusted for priorty
-      //TODO: apply acceleration here
-      const deseriedVelocityX = normalX * this.maxSpeed * this.targetPriority;
-      const deseriedVelocityY = normalY * this.maxSpeed * this.targetPriority;
+      this.deseriedVelocityX = normalX * this.maxSpeed * this.targetPriority;
+      this.deseriedVelocityY = normalY * this.maxSpeed * this.targetPriority;
 
-      const flockers = GetNearbyBoids(targetType, this.sightRadius);
+      const objectClass = this._inst.GetObjectClass();
+      const flockers = this.GetBoidNeighbors(objectClass);
       const count = flockers.length;
-      for(let i=0; i< count; i++) {
-        
-        const current = flockers[i];
+      for(let i=0; i< count; i++) {       
+        const other = flockers[i];
         // Don't flock yourself!
-        if (current == this._inst)
-        {
+        if (other == this._inst) {
             continue;
         }
-        
-        // Calculate distance to other flock member
-        // TODO: use optimzed distance function
-        const deltaX = wi.GetX() - current.GetWorldInfo().GetX();
-        const deltaY = wi.GetY() - current.GetWorldInfo().GetY();
-        const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
-        //Nomalize
-        let normalX = 0;
-        let normalY = 0;
-        if (distance > 0) {
-          normalX = deltaX / distance;
-          normalY = deltaY / distance;
-        }
-
-        // Seperation
-        if (this.seperationDistance > 0 && distance < this.seperationDistance) {
-          const seperationX = normalX * (distance / this.seperationDistance) * this.seperationForce;
-          const seperationY = normalY * (distance / this.seperationDistance) * this.seperationForce;
-
-          deseriedVelocityX += seperationX;
-          deseriedVelocityY += seperationY;
-        }
-
-        // Cohesion
-        const cohesionX = -normalX * this.cohesionPriority / count;
-        const cohesionY = -normalY * this.cohesionPriority / count;
-
-        deseriedVelocityX += cohesionX;
-        deseriedVelocityY += cohesionY;
-
-        // Alignment - Steer towards the average heading of local flockmates
-        const behaviors = current.__behaviorInstances.find(x => {
-          return x._behavior instanceof self.C3.Behaviors.piranha305_boids;
-        });
-
-        const angle = current.GetWorldInfo().GetAngle();
-        if(behaviors) {
-          angle = behaviors._sdkInst.getAngle();
-        }
-
-        const alignmentX = Math.cos(C3.toRadians(angle)) * this.alignmentPriority / count;
-        const alignmentY = Math.sin(C3.toRadians(angle)) * this.alignmentPriority / count;
-
-        deseriedVelocityX += alignmentX;
-        deseriedVelocityY += alignmentY;
+        const { distance, deltaX, deltaY } = this.GetDistance(this._inst, other);
+        const { normalX, normalY } = this.GetNormal(deltaX, deltaY, distance);
+        this.ApplySeperationForce(normalX, normalY, distance);
+        this.ApplyCohesionForce(normalX, normalY, count);
+        this.ApplyAlignmentForce(other, count);
       }
 
-      const steeringX = deseriedVelocityX - this.velocityX;
-      const steeringY = deseriedVelocityY - this.velocityY;
+      // adjust steering velocity
+      const steeringX = this.deseriedVelocityX - this.velocityX;
+      const steeringY = this.deseriedVelocityY - this.velocityY;
 
       const force = Math.sqrt(steeringX * steeringX + steeringY * steeringY);
       const scaleFactor = (force > this.maxForce) ? this.maxForce / force : 1;
       
-      this.steering.x = steeringX * scaleFactor;
-      this.steering.y = steeringY * scaleFactor;
+      this.steeringForceX = steeringX * scaleFactor;
+      this.steeringForceY = steeringY * scaleFactor;
     }
 
-    GetNearbyBoids(targetType, sightRadius) {
-      targetType.GetInstances(); // object class
+    GetMovingAngle() {
+      return Math.atan2(this.velocityY, this.velocityX);
+    }
 
-      //TODO: get nearby boids from quadtree
+    ApplySteeringForce() {
+      debugger;
+      const dt = this.GetRuntime().GetDt(this._inst);
+      const wi = this._inst.GetWorldInfo();
+      
+      const force = Math.sqrt(this.steeringForceX * this.steeringForceX + this.steeringForceY * this.steeringForceY);
+      const scaleFactor = (force > this.maxForce) ? this.maxForce / force : 1;
+      const accelerationX = this.steeringForceX * scaleFactor * dt;
+      const accelerationY = this.steeringForceY * scaleFactor * dt;
+
+      this.velocityX += accelerationX;
+      this.velocityY += accelerationY;
+
+      const speed = Math.sqrt(this.velocityX * this.velocityX + this.velocityY * this.velocityY);
+      if(speed > this.maxSpeed) {
+        const scaleFactor = this.maxSpeed / speed;
+        this.velocityX *= scaleFactor;
+        this.velocityY *= scaleFactor;
+      }
+
+      wi.SetX(wi.GetX() + this.velocityX);
+      wi.SetY(wi.GetY() + this.velocityY);
+
+      if(this.setMoveAngle) {
+        wi.SetAngle(Math.atan2(this.velocityY, this.velocityX));
+      }
+
+      wi.SetBboxChanged();
+
+      //reset steering force
+      this.steeringForceX = 0;
+      this.steeringForceY = 0;
+    }
+
+    GetDistance(instance, other) {
+      const wi = instance.GetWorldInfo();
+      const deltaX = wi.GetX() - other.GetWorldInfo().GetX();
+      const deltaY = wi.GetY() - other.GetWorldInfo().GetY();
+      //const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+      const distance = this.DogLegHypotenuseApprox(deltaX, deltaY);
+      return { distance, deltaX, deltaY };
+    }
+
+    // SOURCE : https://forums.parallax.com/discussion/147522/dog-leg-hypotenuse-approximation
+    DogLegHypotenuseApprox(deltaX, deltaY) {
+      const a = Math.abs(deltaX);
+      const b = Math.abs(deltaY);
+      const lo = Math.min(a, b);
+      const hi = Math.max(a, b);
+      return hi + 3 * lo / 32 + Math.max(0, 2 * lo - hi) / 8 + Math.max(0, 4 * lo - hi) / 16;
+    }
+
+    GetDistanceToTarget(instance, targetX, targetY){
+      const wi = instance.GetWorldInfo();
+      const deltaX = targetX - wi.GetX();
+      const deltaY = targetY - wi.GetY();
+      //const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+      const distance = this.DogLegHypotenuseApprox(deltaX, deltaY);
+      return { distance, deltaX, deltaY };
+    }
+
+    GetNormal(deltaX, deltaY, distance) {
+      let normalX = 0;
+      let normalY = 0;
+      if (distance > 0) {
+        normalX = deltaX / distance;
+        normalY = deltaY / distance;
+      }
+
+      return { normalX, normalY };
+    }
+
+    ApplySeperationForce(normalX, normalY, distance) {
+      // Seperation
+      if (this.seperationDistance > 0 && distance < this.seperationDistance) {
+        const seperationX = normalX * (distance / this.seperationDistance) * this.seperationPriority;
+        const seperationY = normalY * (distance / this.seperationDistance) * this.seperationPriority;
+
+        this.deseriedVelocityX += seperationX;
+        this.deseriedVelocityY += seperationY;
+      }
+    }
+
+    ApplyCohesionForce(normalX, normalY, count) {
+      // Cohesion
+      const cohesionX = -normalX * this.cohesionPriority / count;
+      const cohesionY = -normalY * this.cohesionPriority / count;
+      
+      this.deseriedVelocityX += cohesionX;
+      this.deseriedVelocityY += cohesionY;
+    }
+
+    GetBoidsBehavior(instance) {
+      return instance._behaviorInstances.find(x => {
+        return x._behavior instanceof self.C3.Behaviors.piranha305_boids;
+      });
+    }
+
+    ApplyAlignmentForce(other, count) {
+        // Alignment 
+        const boid = this.GetBoidsBehavior(other);
+        const angle = boid ? boid._sdkInst.GetMovingAngle() : other.GetWorldInfo().GetAngle();
+        const alignmentX = Math.cos(C3.toRadians(angle)) * this.alignmentPriority / count;
+        const alignmentY = Math.sin(C3.toRadians(angle)) * this.alignmentPriority / count;
+
+        this.deseriedVelocityX += alignmentX;
+        this.deseriedVelocityY += alignmentY;
+    }
+
+    GetBoidNeighbors(targetType) {
+      switch(this.neighborStrategy) {
+        case 0: // all
+          return this.GetAllBoids(targetType);
+        case 1: // distance
+          return this.GetNearbyBoids(targetType, this.flockNeighborDistance);
+        case 2: // sight
+          break;
+        case 3: // quadtree
+          break;
+      }
+    }
+
+    GetAllBoids(targetType) {
+      const instances = targetType.GetInstances();
+      return instances; 
+    }
+
+    GetNearbyBoids(targetType, radius) {
+      const wi = this._inst.GetWorldInfo();
+      const instances = targetType.GetInstances();
+      const nearby = [];
+      for (const other of instances) {
+        // Ignore self
+        if (other == this._inst) {
+            continue;
+        }
+
+        const { distance } = this.GetDistance(this._inst, other);
+        if(distance < radius) {
+          nearby.push(other);
+        }
+      }
+      return nearby;
+    }
+
+    SetSeperationPriority(priority) {
+      this.seperationPriority = priority;
+    }
+
+    SetAlignmentPriority(priority) {
+      this.alignmentPriority = priority;
+    }
+
+    SetCohesionPriority(priority) {
+      this.cohesionPriority = priority;
     }
 
     SetEnabled(enabled) {
@@ -178,27 +285,16 @@ function getInstanceJs(parentClass, scriptInterface, addonTriggers, C3) {
     }
 
     ConstructBoidQuadTree() {
-      debugger;
-      const tick = this.GetRuntime().GetTickCount();
-      if (globalThis.QuadTree[tick] == null) {
+      if(!this._sdkType.quadtree) {
+        const objectClass = this._inst.GetObjectClass();
+        const instances = objectClass.GetInstances();
         const layout = this.GetRuntime().GetMainRunningLayout();
-        globalThis.QuadTree[tick] = new globalThis._P305.QuadTree(0, 0, layout.GetWidth(), layout.GetHeight(), this.capacity);
-      }
-      
-      // insert all instances into quadtree
-      const objectClass = this._inst.GetObjectClass();
-      const instances = objectClass.GetInstances();
-      for (let i = 0; i < instances.length; i++) {
-        debugger;
-        globalThis.QuadTree[tick].insert(instances[i]);
+        this._sdkType.CreateQuadtree(layout.GetWidth(), layout.GetHeight(), this.capacity, instances);
       }
     }
 
     DestroyBoidQuadTree() {
-      const tick = this.GetRuntime().GetTickCount();
-      if (globalThis.QuadTree[tick] !== null) {
-        delete globalThis.QuadTree[tick];
-      }
+      this._sdkType.ClearQuadtree();
     }
 
     Release() {
